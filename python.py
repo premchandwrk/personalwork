@@ -1,6 +1,13 @@
 import pandas as pd
 from pandas_gbq import gbq
 
+# Define master schema
+MASTER_SCHEMA = [
+    {'name': 'col1', 'type': 'STRING'},
+    {'name': 'col2', 'type': 'INTEGER'},
+    # Add more columns as needed
+]
+
 def read_excel_to_dataframe(excel_file, sheet_name):
     """
     Read data from Excel file into a Pandas DataFrame.
@@ -12,29 +19,15 @@ def read_excel_to_dataframe(excel_file, sheet_name):
     Returns:
     - DataFrame: The DataFrame containing the data from the specified sheet.
     """
-    df = pd.read_excel(excel_file, sheet_name=sheet_name)
-    return df
-
-def infer_dynamic_schema(df):
-    """
-    Infer the schema dynamically from a DataFrame.
-    
-    Args:
-    - df (DataFrame): The DataFrame from which to infer the schema.
-    
-    Returns:
-    - list of dict: The inferred schema as a list of dictionaries.
-    """
-    schema = []
-    for col, dtype in df.dtypes.items():
-        if dtype == 'int64':
-            bq_type = 'INTEGER'
-        elif dtype == 'float64':
-            bq_type = 'FLOAT'
-        else:
-            bq_type = 'STRING'
-        schema.append({'name': col, 'type': bq_type})
-    return schema
+    try:
+        df = pd.read_excel(excel_file, sheet_name=sheet_name)
+        return df
+    except FileNotFoundError:
+        print("Error: File not found. Please provide a valid file path.")
+        return None
+    except pd.errors.ParserError:
+        print("Error: File format is not valid. Please provide a valid Excel file.")
+        return None
 
 def create_or_append_to_bigquery_table(df, project_id, dataset_id, table_id, schema):
     """
@@ -47,13 +40,19 @@ def create_or_append_to_bigquery_table(df, project_id, dataset_id, table_id, sch
     - table_id (str): The ID of the BigQuery table.
     - schema (list of dict): The schema of the table as a list of dictionaries.
     """
-    # Create table if not exists
-    gbq.to_gbq(df, f"{dataset_id}.{table_id}", project_id=project_id, if_exists='fail', table_schema=schema)
+    try:
+        # Create table if not exists
+        gbq.to_gbq(df, f"{dataset_id}.{table_id}", project_id=project_id, if_exists='fail', table_schema=schema)
 
-    # Insert data into BigQuery
-    df.to_gbq(destination_table=f"{dataset_id}.{table_id}",
-              project_id=project_id,
-              if_exists='append')  # Change to 'replace' if you want to replace the data
+        # Filter DataFrame columns based on master schema
+        df_filtered = df[[col['name'] for col in schema]]
+
+        # Insert data into BigQuery
+        df_filtered.to_gbq(destination_table=f"{dataset_id}.{table_id}",
+                            project_id=project_id,
+                            if_exists='append')  # Change to 'replace' if you want to replace the data
+    except Exception as e:
+        print(f"An error occurred while creating or appending to the BigQuery table: {str(e)}")
 
 def main():
     excel_file = 'path_to_your_excel_file.xlsx'
@@ -63,8 +62,8 @@ def main():
     table_id = 'your_table_id'
 
     df = read_excel_to_dataframe(excel_file, sheet_name)
-    schema = infer_dynamic_schema(df)
-    create_or_append_to_bigquery_table(df, project_id, dataset_id, table_id, schema)
+    if df is not None:
+        create_or_append_to_bigquery_table(df, project_id, dataset_id, table_id, MASTER_SCHEMA)
 
 if __name__ == "__main__":
     main()

@@ -38,11 +38,11 @@ def create_or_append_to_bigquery_table(df, project_id, dataset_id, table_id, sch
         # Convert float columns to strings
         df = df.astype(str)
         
-        # Truncate the BigQuery table
-        gbq.delete_table(f"{dataset_id}.{table_id}", project_id=project_id)
+        # Create empty DataFrame to replace the existing table
+        empty_df = pd.DataFrame(columns=[col['name'] for col in schema])
         
-        # Create table
-        gbq.to_gbq(df.head(0), f"{dataset_id}.{table_id}", project_id=project_id, if_exists='replace', table_schema=schema)
+        # Replace the existing table with an empty DataFrame
+        gbq.to_gbq(empty_df, f"{dataset_id}.{table_id}", project_id=project_id, if_exists='replace', table_schema=schema)
         
         # Filter DataFrame columns based on master schema
         df_filtered = df[[col['name'] for col in schema if col['name'] in df.columns]]
@@ -51,7 +51,7 @@ def create_or_append_to_bigquery_table(df, project_id, dataset_id, table_id, sch
         df_filtered.to_gbq(destination_table=f"{dataset_id}.{table_id}",
                            project_id=project_id,
                            if_exists='append',
-                           table_schema=schema)  # enforce schema during insertion
+                           table_schema=schema)
     except Exception as e:
         print(f"An error occurred while creating or appending to the BigQuery table: {str(e)}")
 

@@ -31,26 +31,27 @@ def read_excel_to_dataframe(excel_file, sheet_name):
 
 def create_or_append_to_bigquery_table(df, project_id, dataset_id, table_id, schema):
     """
-    Create or append data to a BigQuery table.
-    
-    Args:
-    - df (DataFrame): The DataFrame containing the data to insert.
-    - project_id (str): The ID of the Google Cloud project.
-    - dataset_id (str): The ID of the BigQuery dataset.
-    - table_id (str): The ID of the BigQuery table.
-    - schema (list of dict): The schema of the table as a list of dictionaries.
+    Truncate the BigQuery table and load new data from DataFrame into it.
+    Only insert columns matching the schema.
     """
     try:
-        # Create table if not exists
-        gbq.to_gbq(df, f"{dataset_id}.{table_id}", project_id=project_id, if_exists='fail', table_schema=schema)
-
+        # Convert float columns to strings
+        df = df.astype(str)
+        
+        # Truncate the BigQuery table
+        gbq.delete_table(f"{dataset_id}.{table_id}", project_id=project_id)
+        
+        # Create table
+        gbq.to_gbq(df.head(0), f"{dataset_id}.{table_id}", project_id=project_id, if_exists='replace', table_schema=schema)
+        
         # Filter DataFrame columns based on master schema
-        df_filtered = df[[col['name'] for col in schema]]
-
+        df_filtered = df[[col['name'] for col in schema if col['name'] in df.columns]]
+        
         # Insert data into BigQuery
         df_filtered.to_gbq(destination_table=f"{dataset_id}.{table_id}",
-                            project_id=project_id,
-                            if_exists='append')  # Change to 'replace' if you want to replace the data
+                           project_id=project_id,
+                           if_exists='append',
+                           table_schema=schema)  # enforce schema during insertion
     except Exception as e:
         print(f"An error occurred while creating or appending to the BigQuery table: {str(e)}")
 

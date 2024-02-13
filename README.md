@@ -29,6 +29,10 @@ This script loads data from an Excel file into a BigQuery table. It truncates th
 - `table_id`: ID of the BigQuery table.
 - `MASTER_SCHEMA`: Define the master schema for the BigQuery table.
 2. Run the script:
+  
+      ```sh
+    python main.py
+      ```
 
 ## Functionality
 - The script reads data from the specified Excel file into a Pandas DataFrame.

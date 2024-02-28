@@ -1,7 +1,7 @@
+import pandas as pd
 from datetime import datetime
 import logging
 import re
-import pandas as pd
 from google.cloud import bigquery
 import os
 
@@ -105,123 +105,123 @@ def extract_dates_from_excel(excel_path, sheet_name):
 
     return matched_dates
 
-# def main():
-#     # Set up logging
-#     setup_logging()
+def create_metrics_table(client, dataset_id, table_name):
+    """Create a BigQuery table for ETL metrics and errors."""
+    schema = [
+        bigquery.SchemaField("timestamp", "TIMESTAMP"),
+        bigquery.SchemaField("file_path", "STRING"),
+        bigquery.SchemaField("rows_loaded", "INTEGER"),
+        bigquery.SchemaField("error_message", "STRING"),
+    ]
+    table = bigquery.Table(f"{client.project}.{dataset_id}.{table_name}", schema=schema)
+    table = client.create_table(table)
+    logging.info(f"BigQuery metrics table created: {client.project}.{dataset_id}.{table_name}")
 
-#     # List of Excel files
-#     excel_files = ["file1.xlsx", "file2.xlsx"]
+def log_metrics(client, dataset_id, table_name, timestamp, file_path, rows_loaded, error_message=None):
+    """Log ETL metrics and errors to BigQuery table."""
+    try:
+        # Convert timestamp to string
+        timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-#     # Initialize BigQuery client
-#     client = bigquery.Client()
-
-#     # Define BigQuery dataset and table names
-#     dataset_id = 'onepage'
-#     table_name = 'test'
-
-#     # Define BigQuery schema for the table
-#     schema = [
-#         bigquery.SchemaField("product_id", "INTEGER"),
-#         bigquery.SchemaField("product_name", "STRING"),
-#         bigquery.SchemaField("pest_name", "STRING"),
-#         bigquery.SchemaField("observation_name", "STRING"),
-#         bigquery.SchemaField("observation_value", "FLOAT"),
-#         bigquery.SchemaField("observation_unit", "STRING"),
-#         bigquery.SchemaField("date_created", "DATE"),
-#         bigquery.SchemaField("date_expired", "DATE"),
-#     ]
-
-#     for excel_file in excel_files:
-#         # Read the Excel file
-#         df_with_feeding_weight = pd.read_excel(excel_file, sheet_name='Sheet1')
-#         # dates_df = pd.read_excel(excel_file, sheet_name='data')
-
-#         # Check if the table already exists
-#         if not table_exists(client, dataset_id, table_name):
-#             # Create BigQuery tables
-#             create_bigquery_table(client, dataset_id, table_name, schema)
+        # Create rows to insert
+        rows_to_insert = [{
+            "timestamp": timestamp_str,
+            "file_path": file_path,
+            "rows_loaded": rows_loaded,
+            "error_message": error_message
+        }]
         
-#         # Transform DataFrames
-#         transformed_df = transform_data(df_with_feeding_weight)
-
-#         # Extract dates from Excel
-#         dates = extract_dates_from_excel(excel_file, sheet_name='data')
+        # Insert rows into BigQuery table
+        errors = client.insert_rows_json(f"{client.project}.{dataset_id}.{table_name}", rows_to_insert)
         
-#         # Find minimum and maximum dates
-#         if dates:
-#             min_date = min(dates)
-#             max_date = max(dates)
-            
-#             # Add date information to DataFrame
-#             transformed_df['date_created'] = min_date
-#             transformed_df['date_expired'] = max_date
+        # Check for errors
+        if errors:
+            for error in errors:
+                logging.error(f"Error logging metrics to BigQuery table: {error}")
+            raise Exception("Errors occurred while inserting rows into BigQuery table.")
+        else:
+            logging.info(f"Metrics logged to BigQuery table: {client.project}.{dataset_id}.{table_name}")
+    except Exception as e:
+        logging.error(f"Error logging metrics to BigQuery table: {str(e)}")
+        raise
 
-#             # Load DataFrame into BigQuery table
-#             load_dataframe_to_bigquery(client, transformed_df, dataset_id, table_name, "WRITE_APPEND")
-
-#         else:
-#             print("No dates found with that format.")
 
 def main():
     # Set up logging
     setup_logging()
 
     # List of Excel files
-    excel_files = ["file1.xlsx", "file2.xlsx","file3.xlsx"]
+    excel_files = ["file1.xlsx", "file2.xlsx", "file3.xlsx"]
 
     # Initialize BigQuery client
     client = bigquery.Client()
 
-    # Define BigQuery dataset and table names
+    # Define BigQuery dataset and table names for metrics
+    metrics_dataset_id = 'onepage'
+    metrics_table_name = 'etl_execution_logs'
+
+    # Create metrics table if it does not exist
+    if not table_exists(client, metrics_dataset_id, metrics_table_name):
+        create_metrics_table(client, metrics_dataset_id, metrics_table_name)
+
+    # Define BigQuery dataset and table names for ETL data
     dataset_id = 'onepage'
     table_name = 'test'
 
     # Define BigQuery schema for the table
     schema = [
-        bigquery.SchemaField("product_id", "INTEGER", mode="REQUIRED"),
-        bigquery.SchemaField("product_name", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("pest_name", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("observation_name", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("observation_value", "FLOAT", mode="REQUIRED"),
-        bigquery.SchemaField("observation_unit", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("date_created", "DATE", mode="REQUIRED"),
-        bigquery.SchemaField("date_expired", "DATE", mode="REQUIRED"),
+        bigquery.SchemaField("product_id", "INTEGER"),
+        bigquery.SchemaField("product_name", "STRING"),
+        bigquery.SchemaField("pest_name", "STRING"),
+        bigquery.SchemaField("observation_name", "STRING"),
+        bigquery.SchemaField("observation_value", "FLOAT"),
+        bigquery.SchemaField("observation_unit", "STRING"),
+        bigquery.SchemaField("date_created", "DATE"),
+        bigquery.SchemaField("date_expired", "DATE"),
     ]
 
     for excel_file in excel_files:
-        # Read the Excel file
-        df = pd.read_excel(excel_file, sheet_name='Sheet1')
+        try:
+            # Read the Excel file
+            df = pd.read_excel(excel_file, sheet_name='Sheet1')
 
-        # Check if 'productid' column exists
-        if 'productid' not in df.columns:
-            logging.warning(f"Ignoring file {excel_file} as it does not contain 'productid' column.")
-            continue
+            # Check if 'productid' column exists
+            if 'productid' not in df.columns:
+                logging.warning(f"Ignoring file {excel_file} as it does not contain 'productid' column.")
+                log_metrics(client, metrics_dataset_id, metrics_table_name, datetime.now(), excel_file, 0, "Missing 'productid' column")
+                continue
 
-        # Check if the table already exists
-        if not table_exists(client, dataset_id, table_name):
-            # Create BigQuery tables
-            create_bigquery_table(client, dataset_id, table_name, schema)
-        
-        # Transform DataFrame
-        transformed_df = transform_data(df)
-
-        # Extract dates from Excel
-        dates = extract_dates_from_excel(excel_file, sheet_name='data')
-        
-        # Find minimum and maximum dates
-        if dates:
-            min_date = min(dates)
-            max_date = max(dates)
+            # Check if the table already exists
+            if not table_exists(client, dataset_id, table_name):
+                # Create BigQuery tables
+                create_bigquery_table(client, dataset_id, table_name, schema)
             
-            # Add date information to DataFrame
-            transformed_df['date_created'] = min_date
-            transformed_df['date_expired'] = max_date
+            # Transform DataFrame
+            transformed_df = transform_data(df)
 
-            # Load DataFrame into BigQuery table
-            load_dataframe_to_bigquery(client, transformed_df, dataset_id, table_name, "WRITE_APPEND")
+            # Extract dates from Excel
+            dates = extract_dates_from_excel(excel_file, sheet_name='data')
+            
+            # Find minimum and maximum dates
+            if dates:
+                min_date = min(dates)
+                max_date = max(dates)
+                
+                # Add date information to DataFrame
+                transformed_df['date_created'] = min_date
+                transformed_df['date_expired'] = max_date
 
-        else:
-            print("No dates found with that format.")
+                # Load DataFrame into BigQuery table
+                load_dataframe_to_bigquery(client, transformed_df, dataset_id, table_name, "WRITE_APPEND")
+                log_metrics(client, metrics_dataset_id, metrics_table_name, datetime.now(), excel_file, len(transformed_df))
+            else:
+                logging.warning(f"No dates found in the Excel file {excel_file}. Skipping.")
+                log_metrics(client, metrics_dataset_id, metrics_table_name, datetime.now(), excel_file, 0, "No dates found")
+
+        except Exception as e:
+            logging.error(f"Error processing Excel file {excel_file}: {str(e)}")
+            log_metrics(client, metrics_dataset_id, metrics_table_name, datetime.now(), excel_file, 0, str(e))
+
 
 if __name__ == "__main__":
     main()

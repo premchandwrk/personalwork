@@ -1,0 +1,9 @@
+SELECT *
+FROM (
+    SELECT *, ARRAY_LENGTH(record_column) as record_count
+    FROM `your_project_id.your_dataset_id.your_table_id`
+) t
+WHERE string_column = 'John Doe' OR (
+    EXISTS (SELECT 1 FROM UNNEST(record_column) AS r WHERE r.name = 'John Doe')
+    AND record_count > 0
+)

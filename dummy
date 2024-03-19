@@ -7,3 +7,42 @@ WHERE string_column = 'John Doe' OR (
     EXISTS (SELECT 1 FROM UNNEST(record_column) AS r WHERE r.name = 'John Doe')
     AND record_count > 0
 )
+
+
+from google.cloud import bigquery
+import json
+
+def search_name_in_bigquery_table(project_id, dataset_id, table_id, name):
+    # Initialize BigQuery client
+    client = bigquery.Client(project=project_id)
+
+    # SQL query to search for the name in both string column and nested record column
+    query = f"""
+        SELECT *
+        FROM `{project_id}.{dataset_id}.{table_id}`
+        WHERE string_column = '{name}'
+        OR record_column.name = '{name}'
+    """
+
+    # Run the query
+    query_job = client.query(query)
+
+    # Fetch results
+    results = query_job.result()
+
+    # Convert results to JSON
+    json_results = []
+    for row in results:
+        json_results.append(dict(row.items()))
+
+    return json.dumps(json_results)
+
+# Example usage
+if __name__ == "__main__":
+    project_id = "your_project_id"
+    dataset_id = "your_dataset_id"
+    table_id = "your_table_id"
+    name_to_search = "John Doe"
+
+    search_results = search_name_in_bigquery_table(project_id, dataset_id, table_id, name_to_search)
+    print(search_results)

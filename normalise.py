@@ -80,3 +80,12 @@ def normalize_data(df):
 
     return product_df, crop_df, disease_df, pest_df, document_df, productcrop_df, productdisease_df, productpest_df, documentproduct_df
 
+    # Convert IDs to integers
+    productcrop_df['Product_ID'] = productcrop_df['Product_ID'].astype(int)
+    productcrop_df['Crop_ID'] = productcrop_df['Crop_ID'].astype(int)
+    productdisease_df['Product_ID'] = productdisease_df['Product_ID'].astype(int)
+    productdisease_df['Disease_ID'] = productdisease_df['Disease_ID'].astype(int)
+    productpest_df['Product_ID'] = productpest_df['Product_ID'].astype(int)
+    productpest_df['Pest_ID'] = productpest_df['Pest_ID'].astype(int)
+    documentproduct_df['Product_ID'] = documentproduct_df['Product_ID'].astype(int)
+

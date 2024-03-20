@@ -1,48 +1,68 @@
-SELECT *
-FROM (
-    SELECT *, ARRAY_LENGTH(record_column) as record_count
-    FROM `your_project_id.your_dataset_id.your_table_id`
-) t
-WHERE string_column = 'John Doe' OR (
-    EXISTS (SELECT 1 FROM UNNEST(record_column) AS r WHERE r.name = 'John Doe')
-    AND record_count > 0
-)
-
-
-from google.cloud import bigquery
+from flask import Flask, request, jsonify
+import jwt
 import json
+from google.cloud import bigquery
 
-def search_name_in_bigquery_table(project_id, dataset_id, table_id, name):
-    # Initialize BigQuery client
-    client = bigquery.Client(project=project_id)
+# Path to your JSON key file
+key_path = "key.json"
 
-    # SQL query to search for the name in both string column and nested record column
-    query = f"""
-        SELECT *
-        FROM `{project_id}.{dataset_id}.{table_id}`
-        WHERE string_column = '{name}'
-        OR record_column.name = '{name}'
+# Set environment variable to point to your key
+import os
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
+
+app = Flask(__name__)
+
+# Load the user_access data from BigQuery
+def load_user_access():
+    client = bigquery.Client()
+    query = """
+        SELECT * FROM `project-414304.onepage.user_access`
     """
-
-    # Run the query
     query_job = client.query(query)
-
-    # Fetch results
     results = query_job.result()
-
-    # Convert results to JSON
-    json_results = []
+    user_access_data = {}
     for row in results:
-        json_results.append(dict(row.items()))
+        user_access_data[row.CWID] = {'user_name': row.user_name, 'email': row.email, 'access_group': row.access_group}
+    print(user_access_data)
+    return user_access_data
 
-    return json.dumps(json_results)
+# API endpoint for user login
+@app.route('/login', methods=['POST'])
+def login():
+    try:
+        # Get JWT token from request
+        token = request.json['token']
+        
+        # Decode JWT token to get CWID
+        decoded_token = jwt.decode(token, verify=False)
+        cwid = decoded_token.get('cwid')
+        
+        # Load user access data
+        user_access_data = load_user_access()
+        
+        # Check if CWID exists in user access data
+        if cwid in user_access_data:
+            user_info = user_access_data[cwid]
+            response = {
+                'status': 'success',
+                'message': 'Login successful',
+                'user_name': user_info['user_name'],
+                'email': user_info['email'],
+                'access_group': user_info['access_group']
+            }
+        else:
+            response = {
+                'status': 'error',
+                'message': 'User is not valid'
+            }
+        
+        return jsonify(response), 200
+    except Exception as e:
+        response = {
+            'status': 'error',
+            'message': str(e)
+        }
+        return jsonify(response), 500
 
-# Example usage
-if __name__ == "__main__":
-    project_id = "your_project_id"
-    dataset_id = "your_dataset_id"
-    table_id = "your_table_id"
-    name_to_search = "John Doe"
-
-    search_results = search_name_in_bigquery_table(project_id, dataset_id, table_id, name_to_search)
-    print(search_results)
+if __name__ == '__main__':
+    app.run(debug=True)

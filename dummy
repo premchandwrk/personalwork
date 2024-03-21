@@ -66,3 +66,10 @@ def login():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+# Replace NaN with None
+df_with_none = df.where(pd.notna(df), None)
+
+# Convert DataFrame to string, replacing None with 'null'
+df_string = df_with_none.astype(object).where(pd.notna(df_with_none), 'null')

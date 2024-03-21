@@ -73,3 +73,7 @@ df_with_none = df.where(pd.notna(df), None)
 
 # Convert DataFrame to string, replacing None with 'null'
 df_string = df_with_none.astype(object).where(pd.notna(df_with_none), 'null')
+
+
+product_df = product_df[product_df['Product_Name'] != '']  # Filter out empty strings
+

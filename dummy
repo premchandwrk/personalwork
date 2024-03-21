@@ -76,4 +76,15 @@ df_string = df_with_none.astype(object).where(pd.notna(df_with_none), 'null')
 
 
 product_df = product_df[product_df['Product_Name'] != '']  # Filter out empty strings
+crop_df = crop_df[crop_df['Crop_Name'] != '']  # Filter out empty strings
 
+disease_df = disease_df[disease_df['Disease_Name'] != '']  # Filter out empty strings
+
+pest_df = pest_df[pest_df['Pest_Name'] != '']  # Filter out empty strings
+
+ # Merge Document information with normalized tables
+    document_df = df.drop(columns=['Product_names', 'crop', 'Diseases', 'pest'])
+    document_df['Product_ID'] = df['Product_names'].str.split(',').apply(lambda x: ','.join(str(product_df.loc[product_df['Product_Name'] == p.strip(), 'Product_ID'].iloc[0]) for p in x.split(',') if p.strip() != '' and pd.notnull(x)) if pd.notnull(x) else None)
+    document_df['Crop_ID'] = df['crop'].str.split(',').apply(lambda x: ','.join(str(crop_df.loc[crop_df['Crop_Name'] == c.strip(), 'Crop_ID'].iloc[0]) for c in x.split(',') if c.strip() != '' and pd.notnull(x)) if pd.notnull(x) else None)
+    document_df['Disease_ID'] = df['Diseases'].str.split(',').apply(lambda x: ','.join(str(disease_df.loc[disease_df['Disease_Name'] == d.strip(), 'Disease_ID'].iloc[0]) for d in x.split(',') if d.strip() != '' and pd.notnull(x)) if pd.notnull(x) else None)
+    document_df['Pest_ID'] = df['pest'].str.split(',').apply(lambda x: ','.join(str(pest_df.loc[pest_df['Pest_Name'] == p.strip(), 'Pest_ID'].iloc[0]) for p in x.split(',') if p.strip() != '' and pd.notnull(x)) if pd.notnull(x) else None)

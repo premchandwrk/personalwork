@@ -1,0 +1,122 @@
+[
+    {
+  "bcs_code": "asfdsafsa",
+  "sp_code": null,
+  "strain_name": "Sample Stsrain",
+  "scientific_name": "Sample sScientific Name",
+  "vendor_name": "Sample Vensdor",
+  "genus_species": "Sample Gesnus Species",
+  "synonyms": "Samplse Synonyms",
+  "ncbi_id": "NCBI1s23",
+  "chem_catlg_id": "Chems123",
+  "mo_catlg_id": "Mos123",
+  "requestor_cwid": "Requesstor123",
+  "strain_alias": "Sample Aslias",
+  "formulation": [
+    {
+      "amt_of_active_ingredients": "asdasd",
+      "formulation_type": "Sample Formuslation Type",
+      "physical_state": "Ssolid",
+      "formulated_or_wholebroth": "Formsulated",
+      "product_type": "Sample Product Type"
+    },
+    {
+      "amt_of_active_ingredients": "iyghy",
+      "formulation_type": "Another Formsulation Type",
+      "physical_state": "Liqsuid",
+      "formulated_or_wholebroth": "Wholebrosth",
+      "product_type": "Another Produsct Type"
+    }
+  ]
+},
+{
+  "bcs_code": "BCS12s3",
+  "sp_code": "SP123s",
+  "strain_name": "Sample Stsrain",
+  "scientific_name": "Sample sScientific Name",
+  "vendor_name": "Sample Vensdor",
+  "genus_species": "Sample Gesnus Species",
+  "synonyms": "Samplse Synonyms",
+  "ncbi_id": "NCBI1s23",
+  "chem_catlg_id": "Chems123",
+  "mo_catlg_id": "Mos123",
+  "requestor_cwid": "Requesstor123",
+  "strain_alias": "Sample Aslias",
+  "formulation": [
+    {
+      "amt_of_active_ingredients": "dfdsaf",
+      "formulation_type": "Sample Formuslation Type",
+      "physical_state": "Ssolid",
+      "formulated_or_wholebroth": "Formsulated",
+      "product_type": "Sample Product Type"
+    },
+    {
+      "amt_of_active_ingredients": "iyghy1",
+      "formulation_type": "Another Formsulation Type",
+      "physical_state": "Liqsuid",
+      "formulated_or_wholebroth": "Wholebrosth",
+      "product_type": "Another Produsct Type"
+    }
+  ]
+},
+{
+  "bcs_code": "asfdsafsa",
+  "sp_code": "1",
+  "strain_name": "Sample Stsrain",
+  "scientific_name": "Sample sScientific Name",
+  "vendor_name": "Sample Vensdor",
+  "genus_species": "Sample Gesnus Species",
+  "synonyms": "Samplse Synonyms",
+  "ncbi_id": "NCBI1s23",
+  "chem_catlg_id": "Chems123",
+  "mo_catlg_id": "Mos123",
+  "requestor_cwid": "Requesstor123",
+  "strain_alias": "Sample Aslias",
+  "formulation": [
+    {
+      "amt_of_active_ingredients": "asdasd",
+      "formulation_type": "Sample Formuslation Type",
+      "physical_state": "Ssolid",
+      "formulated_or_wholebroth": "Formsulated",
+      "product_type": "Sample Product Type"
+    },
+    {
+      "amt_of_active_ingredients": "iyghy",
+      "formulation_type": "Another Formsulation Type",
+      "physical_state": "Liqsuid",
+      "formulated_or_wholebroth": "Wholebrosth",
+      "product_type": "Another Produsct Type"
+    }
+  ]
+},
+{
+  "bcs_code": "BCS12s3",
+  "sp_code": "SP123s",
+  "strain_name": "Sample Stsrain",
+  "scientific_name": "Sample sScientific Name",
+  "vendor_name": "Sample Vensdor",
+  "genus_species": "Sample Gesnus Species",
+  "synonyms": "Samplse Synonyms",
+  "ncbi_id": "NCBI1s23",
+  "chem_catlg_id": "Chems123",
+  "mo_catlg_id": "Mos123",
+  "requestor_cwid": "Requesstor123",
+  "strain_alias": "Sample Aslias",
+  "formulation": [
+    {
+      "amt_of_active_ingredients": "dfdsaf",
+      "formulation_type": "Sample Formuslation Type",
+      "physical_state": "Ssolid",
+      "formulated_or_wholebroth": "Formsulated",
+      "product_type": "Sample Product Type"
+    },
+    {
+      "amt_of_active_ingredients": "iyghy1",
+      "formulation_type": "Another Formsulation Type",
+      "physical_state": "Liqsuid",
+      "formulated_or_wholebroth": "Wholebrosth",
+      "product_type": "Another Produsct Type"
+    }
+  ]
+}
+]

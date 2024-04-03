@@ -44,7 +44,7 @@ def login():
     ---
     parameters:
       - name: token
-        in: body
+        in: header
         type: string
         required: true
         description: JWT token for user authentication

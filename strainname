@@ -1,0 +1,144 @@
+from flask import Flask, request, jsonify
+from google.cloud import bigquery
+import concurrent.futures
+import os
+from datetime import datetime
+
+# Path to your JSON key file
+key_path = "key.json"
+
+# Set environment variable to point to your key
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
+
+app = Flask(__name__)
+
+# Initialize BigQuery client
+client = bigquery.Client()
+
+def check_and_insert_rows(data_list, inserted_data, not_inserted_data):
+    # Create a set to store unique identifiers for processed rows
+    processed_identifiers = set()
+
+    # Function to process each data row
+    def process_row(data):
+        # Create a unique identifier for each row
+        identifier = (
+            data["bcs_code"], data["sp_code"], data["strain_name"],
+            data["scientific_name"], data["vendor_name"], data["genus_species"],
+            data["amt_of_active_ingredients"], data["formulation_type"],
+            data["physical_state"], data["formulated_or_wholebroth"],
+            data["product_type"], data["synonyms"], data["ncbi_id"],
+            data["chem_catlg_id"], data["mo_catlg_id"], data["requestor_cwid"],
+            data["strain_alias"]
+        )
+
+        # Check if the identifier is already processed
+        if identifier in processed_identifiers:
+            # If duplicate, append to not_inserted_data and return
+            not_inserted_data.append(data)
+            return
+
+        # Add the identifier to the set of processed identifiers
+        processed_identifiers.add(identifier)
+
+        # Check if the row exists in the database
+        if not row_exists(data):
+            # Append the data to the list for insertion
+            inserted_data.append(data)
+        else:
+            # If the row exists, append to not_inserted_data
+            not_inserted_data.append(data)
+
+    # Process each data row concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(process_row, data) for data in data_list]
+        concurrent.futures.wait(futures)
+
+    # If there is data for insertion, perform insertion
+    if inserted_data:
+        insert_rows_batch(inserted_data)
+
+def row_exists(data):
+    # Define the query to check if the row exists
+    query = f"""
+        SELECT *
+        FROM `project-414304.BCS.bcs_sp_ui_all_info`
+        WHERE 
+            bcs_code = '{data["bcs_code"]}' AND
+            sp_code = '{data["sp_code"]}' AND
+            strain_name = '{data["strain_name"]}' AND
+            scientific_name = '{data["scientific_name"]}' AND
+            vendor_name = '{data["vendor_name"]}' AND
+            genus_species = '{data["genus_species"]}' AND
+            amt_of_active_ingredients = '{data["amt_of_active_ingredients"]}' AND
+            formulation_type = '{data["formulation_type"]}' AND
+            physical_state = '{data["physical_state"]}' AND
+            formulated_or_wholebroth = '{data["formulated_or_wholebroth"]}' AND
+            product_type = '{data["product_type"]}' AND
+            synonyms = '{data["synonyms"]}' AND
+            ncbi_id = '{data["ncbi_id"]}' AND
+            chem_catlg_id = '{data["chem_catlg_id"]}' AND
+            mo_catlg_id = '{data["mo_catlg_id"]}' AND
+            requestor_cwid = '{data["requestor_cwid"]}' AND
+            strain_alias = '{data["strain_alias"]}'
+            LIMIT 1
+    """
+
+    # Run the query
+    query_job = client.query(query)
+
+    # Check if the row exists
+    return len(list(query_job.result())) > 0
+
+def insert_rows_batch(data_list):
+    # Define the BigQuery table to insert into
+    table_id = "project-414304.BCS.bcs_sp_ui_all_info"
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Create rows for batch insertion
+    rows_to_insert = [
+        {
+            "bcs_code": data["bcs_code"],
+            "sp_code": data["sp_code"],
+            "strain_name": data["strain_name"],
+            "scientific_name": data["scientific_name"],
+            "vendor_name": data["vendor_name"],
+            "genus_species": data["genus_species"],
+            "amt_of_active_ingredients": data["amt_of_active_ingredients"],
+            "formulation_type": data["formulation_type"],
+            "physical_state": data["physical_state"],
+            "formulated_or_wholebroth": data["formulated_or_wholebroth"],
+            "product_type": data["product_type"],
+            "synonyms": data["synonyms"],
+            "ncbi_id": data["ncbi_id"],
+            "chem_catlg_id": data["chem_catlg_id"],
+            "mo_catlg_id": data["mo_catlg_id"],
+            "requestor_cwid": data["requestor_cwid"],
+            "strain_alias": data["strain_alias"],
+            "created_date": current_time,
+            "last_updated_timestamp": current_time
+        } for data in data_list
+    ]
+
+    # Insert rows into BigQuery
+    errors = client.insert_rows_json(table_id, rows_to_insert)
+
+    if errors == []:
+        print("Batch of rows inserted successfully.")
+    else:
+        print(f"Errors encountered: {errors}")
+
+@app.route('/insert_data', methods=['POST'])
+def insert_data():
+    data_list = request.json
+    inserted_data = []
+    not_inserted_data = []
+    check_and_insert_rows(data_list, inserted_data, not_inserted_data)
+    response = {
+        "success": True,
+        "inserted_data": inserted_data,
+        "not_inserted_data": not_inserted_data
+    }
+    return jsonify(response)
+
+if __name__ == '__main__':
+    app.run(debug=True)

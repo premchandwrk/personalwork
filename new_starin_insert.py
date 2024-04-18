@@ -67,7 +67,10 @@ def insert_data():
             row = {
                 "id": int(max_id) + i + 1,
                 "created_date": current_time,
-                "last_updated_timestamp": current_time
+                "last_updated_timestamp": current_time,
+                "sp_code": int(data["sp_code"]),
+        "chem_catlg_id": int(data["chem_catlg_id"]),
+        "mo_catlg_id": int(data["mo_catlg_id"])
             }
             row.update(data)
             rows_to_insert.append(row)

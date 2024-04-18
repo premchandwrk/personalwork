@@ -29,7 +29,7 @@ def insert_rows(rows_to_insert):
 def rows_exist(data_list):
     identifiers = [tuple(data.values()) for data in data_list]
     query = f"""
-        SELECT COUNT(*)
+        SELECT *
         FROM `{table_id}`
         WHERE (bcs_code, sp_code, strain_name, scientific_name, vendor_name,
                genus_species, amt_of_active_ingredients, formulation_type,
@@ -39,8 +39,7 @@ def rows_exist(data_list):
     """
     query_job = client.query(query)
     result = query_job.result()
-    row_count = next(result)[0]
-    return row_count > 0
+    return any(result)
 
 # Route for inserting data
 @app.route('/insert_data', methods=['POST'])
